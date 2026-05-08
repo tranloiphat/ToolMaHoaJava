@@ -1,0 +1,64 @@
+# =====================
+# Maven build output
+# =====================
+target/
+*.class
+
+# =====================
+# IDE - IntelliJ IDEA
+# =====================
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# =====================
+# IDE - Eclipse
+# =====================
+.classpath
+.project
+.settings/
+bin/
+
+# =====================
+# IDE - VS Code
+# =====================
+.vscode/
+
+# =====================
+# IDE - NetBeans
+# =====================
+nbproject/
+build/
+dist/
+nbbuild/
+nbdist/
+.nb-gradle/
+
+# =====================
+# OS generated files
+# =====================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# =====================
+# Key files (bảo mật - không commit key lên git)
+# =====================
+*.key
+*.pem
+*.p12
+*.jks
+keys/
+
+# =====================
+# Log files
+# =====================
+*.log
+logs/
