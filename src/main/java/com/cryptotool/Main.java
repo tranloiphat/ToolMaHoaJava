@@ -1,70 +1,79 @@
 package com.cryptotool;
 
-import com.cryptotool.algorithms.symmetric.AESAlgorithm;
+import com.cryptotool.algorithms.symmetric.BlowfishAlgorithm;
 
 /**
- * Entry point — Giai doan 7: test AES voi nhieu mode va key size.
+ * Entry point — Giai doan 8: test Blowfish (BouncyCastle).
  */
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("=== Giai doan 7: AES ===\n");
+        System.out.println("=== Giai doan 8: Blowfish (BouncyCastle) ===\n");
 
-        // Test tất cả 5 mode với các key size khác nhau
-        testAES("ECB", AESAlgorithm.PADDING_PKCS5, 128);
-        testAES("CBC", AESAlgorithm.PADDING_PKCS5, 256);
-        testAES("CFB", AESAlgorithm.PADDING_NONE,  192);
-        testAES("OFB", AESAlgorithm.PADDING_NONE,  128);
-        testAES("CTR", AESAlgorithm.PADDING_NONE,  256);
+        testBlowfishDefault();
+        testBlowfishKeySizes();
+        testImportKey();
 
-        testSamePlaintextECBvsCBC();
-
-        System.out.println("\n=== AES hoat dong chinh xac! ===");
+        System.out.println("\n=== Blowfish hoat dong chinh xac! ===");
     }
 
-    // Chạy 1 test case: mode + padding + keySize
-    private static void testAES(String mode, String padding, int keySize) {
-        System.out.println("[AES/" + mode + "/" + padding + "] Key=" + keySize + "bit:");
+    // Test cơ bản với key 128-bit mặc định
+    private static void testBlowfishDefault() {
+        System.out.println("[Blowfish] Test key 128-bit (mac dinh):");
         try {
-            byte[] key       = AESAlgorithm.generateKey(keySize);
-            String plain     = "An toan bao mat he thong - NLU";
+            byte[] key       = BlowfishAlgorithm.generateKey();
+            String keyB64    = BlowfishAlgorithm.exportKeyToBase64(key);
+            String plain     = "Hello Blowfish - BouncyCastle Provider!";
 
-            String cipher    = AESAlgorithm.encrypt(plain, key, mode, padding);
-            String decrypted = AESAlgorithm.decrypt(cipher, key, mode, padding);
+            String cipher    = BlowfishAlgorithm.encrypt(plain, key);
+            String decrypted = BlowfishAlgorithm.decrypt(cipher, key);
 
-            System.out.println("  Ban ro   : " + plain);
-            System.out.println("  Ban ma   : " + cipher);
-            System.out.println("  Giai ma  : " + decrypted);
-            System.out.println("  Ket qua  : " + (plain.equals(decrypted) ? "PASS" : "FAIL"));
+            System.out.println("  Provider  : BouncyCastle (BC)");
+            System.out.println("  Key B64   : " + keyB64);
+            System.out.println("  Key size  : " + key.length * 8 + " bit");
+            System.out.println("  Ban ro    : " + plain);
+            System.out.println("  Ban ma    : " + cipher);
+            System.out.println("  Giai ma   : " + decrypted);
+            System.out.println("  Ket qua   : " + (plain.equals(decrypted) ? "PASS" : "FAIL"));
         } catch (Exception e) {
             System.out.println("  LOI: " + e.getMessage());
         }
-        System.out.println();
     }
 
-    // Chứng minh ECB không an toàn: cùng plaintext → cùng ciphertext
-    // CBC thì khác mỗi lần (do IV ngẫu nhiên)
-    private static void testSamePlaintextECBvsCBC() {
-        System.out.println("[AES] Demo ECB vs CBC - cung plaintext, ma hoa 2 lan:");
+    // Test nhiều kích thước key: 32, 128, 256, 448 bit
+    private static void testBlowfishKeySizes() {
+        System.out.println("\n[Blowfish] Test cac key size:");
+        int[] keySizes = {32, 128, 256, 448};
+        String plain   = "Test Blowfish key sizes";
+
+        for (int keyBits : keySizes) {
+            try {
+                byte[] key       = BlowfishAlgorithm.generateKey(keyBits);
+                String cipher    = BlowfishAlgorithm.encrypt(plain, key);
+                String decrypted = BlowfishAlgorithm.decrypt(cipher, key);
+                boolean ok       = plain.equals(decrypted);
+
+                System.out.printf("  %3d bit: %s%n", keyBits, ok ? "PASS" : "FAIL");
+            } catch (Exception e) {
+                System.out.printf("  %3d bit: LOI - %s%n", keyBits, e.getMessage());
+            }
+        }
+    }
+
+    // Test import key từ Base64
+    private static void testImportKey() {
+        System.out.println("\n[Blowfish] Test import key tu Base64:");
         try {
-            byte[] key   = AESAlgorithm.generateKey(128);
-            String plain = "AAAAAAAAAAAAAAAA"; // 16 byte toàn 'A'
+            byte[] originalKey = BlowfishAlgorithm.generateKey(256);
+            String keyB64      = BlowfishAlgorithm.exportKeyToBase64(originalKey);
+            byte[] importedKey = BlowfishAlgorithm.importKeyFromBase64(keyB64);
 
-            // ECB: mã hóa 2 lần cùng plain → bản mã GIỐNG NHAU (nguy hiểm!)
-            String ecb1 = AESAlgorithm.encrypt(plain, key, AESAlgorithm.MODE_ECB, AESAlgorithm.PADDING_PKCS5);
-            String ecb2 = AESAlgorithm.encrypt(plain, key, AESAlgorithm.MODE_ECB, AESAlgorithm.PADDING_PKCS5);
+            String plain     = "Import key test";
+            String cipher    = BlowfishAlgorithm.encrypt(plain, originalKey);
+            String decrypted = BlowfishAlgorithm.decrypt(cipher, importedKey);
 
-            // CBC: mã hóa 2 lần cùng plain → bản mã KHÁC NHAU (do IV random)
-            String cbc1 = AESAlgorithm.encrypt(plain, key, AESAlgorithm.MODE_CBC, AESAlgorithm.PADDING_PKCS5);
-            String cbc2 = AESAlgorithm.encrypt(plain, key, AESAlgorithm.MODE_CBC, AESAlgorithm.PADDING_PKCS5);
-
-            System.out.println("  ECB lan 1: " + ecb1);
-            System.out.println("  ECB lan 2: " + ecb2);
-            System.out.println("  ECB giong nhau (khong an toan): " + (ecb1.equals(ecb2) ? "YES (BAD)" : "NO"));
-            System.out.println();
-            System.out.println("  CBC lan 1: " + cbc1);
-            System.out.println("  CBC lan 2: " + cbc2);
-            System.out.println("  CBC khac nhau (an toan): " + (!cbc1.equals(cbc2) ? "YES (GOOD)" : "NO"));
+            System.out.println("  Key B64   : " + keyB64);
+            System.out.println("  Giai ma   : " + (plain.equals(decrypted) ? "PASS" : "FAIL"));
         } catch (Exception e) {
             System.out.println("  LOI: " + e.getMessage());
         }
