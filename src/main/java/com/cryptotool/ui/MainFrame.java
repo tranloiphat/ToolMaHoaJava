@@ -26,8 +26,10 @@ public class MainFrame extends JFrame {
         // Tab 1: Hàm Băm (đơn giản nhất, làm trước)
         tabbedPane.addTab("  Ham Bam  ", new HashPanel());
 
-        // Tab 2 & 3: placeholder — sẽ được thay bằng panel thật ở giai đoạn 11, 12
-        tabbedPane.addTab("  Ma Hoa Doi Xung  ", buildPlaceholder("SymmetricPanel - Giai doan 11"));
+        // Tab 2: Mã hóa đối xứng
+        tabbedPane.addTab("  Ma Hoa Doi Xung  ", new SymmetricPanel());
+
+        // Tab 3: placeholder — sẽ được thay bằng panel thật ở giai đoạn 12
         tabbedPane.addTab("  Ma Hoa Bat Doi Xung  ", buildPlaceholder("AsymmetricPanel - Giai doan 12"));
 
         add(tabbedPane, BorderLayout.CENTER);
