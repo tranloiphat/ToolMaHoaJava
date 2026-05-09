@@ -1,79 +1,122 @@
 package com.cryptotool;
 
-import com.cryptotool.algorithms.symmetric.BlowfishAlgorithm;
+import com.cryptotool.algorithms.asymmetric.RSAAlgorithm;
+
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 /**
- * Entry point — Giai doan 8: test Blowfish (BouncyCastle).
+ * Entry point — Giai doan 9: test RSA.
  */
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("=== Giai doan 8: Blowfish (BouncyCastle) ===\n");
+        System.out.println("=== Giai doan 9: RSA ===\n");
 
-        testBlowfishDefault();
-        testBlowfishKeySizes();
-        testImportKey();
+        testRSA2048();
+        testRSAKeySizes();
+        testExportImportKey();
+        testLongText();
 
-        System.out.println("\n=== Blowfish hoat dong chinh xac! ===");
+        System.out.println("\n=== RSA hoat dong chinh xac! ===");
     }
 
-    // Test cơ bản với key 128-bit mặc định
-    private static void testBlowfishDefault() {
-        System.out.println("[Blowfish] Test key 128-bit (mac dinh):");
+    // Test RSA 2048-bit cơ bản
+    private static void testRSA2048() {
+        System.out.println("[RSA] Test 2048-bit (mac dinh):");
         try {
-            byte[] key       = BlowfishAlgorithm.generateKey();
-            String keyB64    = BlowfishAlgorithm.exportKeyToBase64(key);
-            String plain     = "Hello Blowfish - BouncyCastle Provider!";
+            System.out.print("  Dang sinh cap khoa 2048-bit... ");
+            long start   = System.currentTimeMillis();
+            KeyPair pair = RSAAlgorithm.generateKeyPair(2048);
+            long end     = System.currentTimeMillis();
+            System.out.println("xong (" + (end - start) + "ms)");
 
-            String cipher    = BlowfishAlgorithm.encrypt(plain, key);
-            String decrypted = BlowfishAlgorithm.decrypt(cipher, key);
+            PublicKey  pubKey  = pair.getPublic();
+            PrivateKey privKey = pair.getPrivate();
 
-            System.out.println("  Provider  : BouncyCastle (BC)");
-            System.out.println("  Key B64   : " + keyB64);
-            System.out.println("  Key size  : " + key.length * 8 + " bit");
-            System.out.println("  Ban ro    : " + plain);
-            System.out.println("  Ban ma    : " + cipher);
-            System.out.println("  Giai ma   : " + decrypted);
-            System.out.println("  Ket qua   : " + (plain.equals(decrypted) ? "PASS" : "FAIL"));
+            System.out.println("  Public Key  (64 ky tu dau): " +
+                RSAAlgorithm.exportPublicKey(pubKey).substring(0, 64) + "...");
+            System.out.println("  Private Key (64 ky tu dau): " +
+                RSAAlgorithm.exportPrivateKey(privKey).substring(0, 64) + "...");
+
+            String plain     = "Hello RSA! Ma hoa bat doi xung.";
+            String cipher    = RSAAlgorithm.encrypt(plain, pubKey);
+            String decrypted = RSAAlgorithm.decrypt(cipher, privKey);
+
+            System.out.println("  Ban ro   : " + plain);
+            System.out.println("  Ban ma   : " + cipher.substring(0, Math.min(60, cipher.length())) + "...");
+            System.out.println("  Giai ma  : " + decrypted);
+            System.out.println("  Ket qua  : " + (plain.equals(decrypted) ? "PASS" : "FAIL"));
         } catch (Exception e) {
             System.out.println("  LOI: " + e.getMessage());
         }
     }
 
-    // Test nhiều kích thước key: 32, 128, 256, 448 bit
-    private static void testBlowfishKeySizes() {
-        System.out.println("\n[Blowfish] Test cac key size:");
-        int[] keySizes = {32, 128, 256, 448};
-        String plain   = "Test Blowfish key sizes";
+    // Test các kích thước key khác nhau (1024 nhanh, 4096 chậm)
+    private static void testRSAKeySizes() {
+        System.out.println("\n[RSA] Test cac key size:");
+        int[] keySizes = {1024, 2048, 4096};
+        String plain   = "Test RSA key sizes";
 
-        for (int keyBits : keySizes) {
+        for (int keySize : keySizes) {
             try {
-                byte[] key       = BlowfishAlgorithm.generateKey(keyBits);
-                String cipher    = BlowfishAlgorithm.encrypt(plain, key);
-                String decrypted = BlowfishAlgorithm.decrypt(cipher, key);
+                long start   = System.currentTimeMillis();
+                KeyPair pair = RSAAlgorithm.generateKeyPair(keySize);
+                long genTime = System.currentTimeMillis() - start;
+
+                String cipher    = RSAAlgorithm.encrypt(plain, pair.getPublic());
+                String decrypted = RSAAlgorithm.decrypt(cipher, pair.getPrivate());
                 boolean ok       = plain.equals(decrypted);
 
-                System.out.printf("  %3d bit: %s%n", keyBits, ok ? "PASS" : "FAIL");
+                System.out.printf("  %4d-bit: %s | Gen=%dms%n",
+                    keySize, ok ? "PASS" : "FAIL", genTime);
             } catch (Exception e) {
-                System.out.printf("  %3d bit: LOI - %s%n", keyBits, e.getMessage());
+                System.out.printf("  %4d-bit: LOI - %s%n", keySize, e.getMessage());
             }
         }
     }
 
-    // Test import key từ Base64
-    private static void testImportKey() {
-        System.out.println("\n[Blowfish] Test import key tu Base64:");
+    // Test export public key → import lại → dùng để encrypt
+    private static void testExportImportKey() {
+        System.out.println("\n[RSA] Test export/import key:");
         try {
-            byte[] originalKey = BlowfishAlgorithm.generateKey(256);
-            String keyB64      = BlowfishAlgorithm.exportKeyToBase64(originalKey);
-            byte[] importedKey = BlowfishAlgorithm.importKeyFromBase64(keyB64);
+            KeyPair pair = RSAAlgorithm.generateKeyPair(2048);
 
-            String plain     = "Import key test";
-            String cipher    = BlowfishAlgorithm.encrypt(plain, originalKey);
-            String decrypted = BlowfishAlgorithm.decrypt(cipher, importedKey);
+            // Export ra Base64
+            String pubB64  = RSAAlgorithm.exportPublicKey(pair.getPublic());
+            String privB64 = RSAAlgorithm.exportPrivateKey(pair.getPrivate());
 
-            System.out.println("  Key B64   : " + keyB64);
-            System.out.println("  Giai ma   : " + (plain.equals(decrypted) ? "PASS" : "FAIL"));
+            // Import lại từ Base64
+            PublicKey  importedPub  = RSAAlgorithm.importPublicKey(pubB64);
+            PrivateKey importedPriv = RSAAlgorithm.importPrivateKey(privB64);
+
+            String plain     = "Test import/export key";
+            String cipher    = RSAAlgorithm.encrypt(plain, importedPub);
+            String decrypted = RSAAlgorithm.decrypt(cipher, importedPriv);
+
+            System.out.println("  Export → Import → Encrypt → Decrypt: " +
+                (plain.equals(decrypted) ? "PASS" : "FAIL"));
+        } catch (Exception e) {
+            System.out.println("  LOI: " + e.getMessage());
+        }
+    }
+
+    // Test văn bản dài hơn giới hạn 1 chunk — tự động chia chunk
+    private static void testLongText() {
+        System.out.println("\n[RSA] Test van ban dai (vuot gioi han 1 chunk):");
+        try {
+            KeyPair pair = RSAAlgorithm.generateKeyPair(1024);
+            // 1024-bit key → max 117 byte/chunk. Dùng 300 ký tự → cần 3 chunk
+            String plain = "A".repeat(300);
+
+            String cipher    = RSAAlgorithm.encrypt(plain, pair.getPublic());
+            String decrypted = RSAAlgorithm.decrypt(cipher, pair.getPrivate());
+
+            int chunks = cipher.split("\\|").length;
+            System.out.println("  Do dai input : " + plain.length() + " ky tu");
+            System.out.println("  So chunk     : " + chunks + " (moi chunk toi da 117 byte)");
+            System.out.println("  Ket qua      : " + (plain.equals(decrypted) ? "PASS" : "FAIL"));
         } catch (Exception e) {
             System.out.println("  LOI: " + e.getMessage());
         }
