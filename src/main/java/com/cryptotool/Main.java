@@ -1,57 +1,37 @@
 package com.cryptotool;
 
-import com.cryptotool.algorithms.symmetric.DESAlgorithm;
-import com.cryptotool.algorithms.symmetric.TripleDESAlgorithm;
+import com.cryptotool.algorithms.symmetric.AESAlgorithm;
 
 /**
- * Entry point — Giai doan 6: test DES va 3DES.
+ * Entry point — Giai doan 7: test AES voi nhieu mode va key size.
  */
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("=== Giai doan 6: DES & 3DES ===\n");
+        System.out.println("=== Giai doan 7: AES ===\n");
 
-        testDES();
-        testTripleDES112();
-        testTripleDES168();
-        testImportKey();
+        // Test tất cả 5 mode với các key size khác nhau
+        testAES("ECB", AESAlgorithm.PADDING_PKCS5, 128);
+        testAES("CBC", AESAlgorithm.PADDING_PKCS5, 256);
+        testAES("CFB", AESAlgorithm.PADDING_NONE,  192);
+        testAES("OFB", AESAlgorithm.PADDING_NONE,  128);
+        testAES("CTR", AESAlgorithm.PADDING_NONE,  256);
 
-        System.out.println("\n=== DES & 3DES hoat dong chinh xac! ===");
+        testSamePlaintextECBvsCBC();
+
+        System.out.println("\n=== AES hoat dong chinh xac! ===");
     }
 
-    // Test DES cơ bản: generate key → encrypt → decrypt
-    private static void testDES() {
-        System.out.println("[DES] Test co ban (CBC/PKCS5Padding):");
+    // Chạy 1 test case: mode + padding + keySize
+    private static void testAES(String mode, String padding, int keySize) {
+        System.out.println("[AES/" + mode + "/" + padding + "] Key=" + keySize + "bit:");
         try {
-            byte[] key      = DESAlgorithm.generateKey();
-            String keyB64   = DESAlgorithm.exportKeyToBase64(key);
-            String plain    = "Hello DES World!";
+            byte[] key       = AESAlgorithm.generateKey(keySize);
+            String plain     = "An toan bao mat he thong - NLU";
 
-            String cipher   = DESAlgorithm.encrypt(plain, key);
-            String decrypted = DESAlgorithm.decrypt(cipher, key);
+            String cipher    = AESAlgorithm.encrypt(plain, key, mode, padding);
+            String decrypted = AESAlgorithm.decrypt(cipher, key, mode, padding);
 
-            System.out.println("  Key (Base64) : " + keyB64);
-            System.out.println("  Key size     : " + key.length + " bytes (" + (key.length * 8) + " bit)");
-            System.out.println("  Ban ro       : " + plain);
-            System.out.println("  Ban ma (B64) : " + cipher);
-            System.out.println("  Giai ma      : " + decrypted);
-            System.out.println("  Ket qua      : " + (plain.equals(decrypted) ? "PASS" : "FAIL"));
-        } catch (Exception e) {
-            System.out.println("  LOI: " + e.getMessage());
-        }
-    }
-
-    // Test 3DES với key 112-bit (2-key)
-    private static void testTripleDES112() {
-        System.out.println("\n[3DES] Test key 112-bit (2-key EDE):");
-        try {
-            byte[] key       = TripleDESAlgorithm.generateKey(112);
-            String plain     = "Hello Triple DES!";
-
-            String cipher    = TripleDESAlgorithm.encrypt(plain, key);
-            String decrypted = TripleDESAlgorithm.decrypt(cipher, key);
-
-            System.out.println("  Key size : " + key.length + " bytes (" + (key.length * 8) + " bit)");
             System.out.println("  Ban ro   : " + plain);
             System.out.println("  Ban ma   : " + cipher);
             System.out.println("  Giai ma  : " + decrypted);
@@ -59,47 +39,32 @@ public class Main {
         } catch (Exception e) {
             System.out.println("  LOI: " + e.getMessage());
         }
+        System.out.println();
     }
 
-    // Test 3DES với key 168-bit (3-key) — mặc định
-    private static void testTripleDES168() {
-        System.out.println("\n[3DES] Test key 168-bit (3-key EDE):");
+    // Chứng minh ECB không an toàn: cùng plaintext → cùng ciphertext
+    // CBC thì khác mỗi lần (do IV ngẫu nhiên)
+    private static void testSamePlaintextECBvsCBC() {
+        System.out.println("[AES] Demo ECB vs CBC - cung plaintext, ma hoa 2 lan:");
         try {
-            byte[] key       = TripleDESAlgorithm.generateKey(168);
-            String plain     = "Bao mat he thong - DH Nong Lam TPHCM";
+            byte[] key   = AESAlgorithm.generateKey(128);
+            String plain = "AAAAAAAAAAAAAAAA"; // 16 byte toàn 'A'
 
-            String cipher    = TripleDESAlgorithm.encrypt(plain, key);
-            String decrypted = TripleDESAlgorithm.decrypt(cipher, key);
+            // ECB: mã hóa 2 lần cùng plain → bản mã GIỐNG NHAU (nguy hiểm!)
+            String ecb1 = AESAlgorithm.encrypt(plain, key, AESAlgorithm.MODE_ECB, AESAlgorithm.PADDING_PKCS5);
+            String ecb2 = AESAlgorithm.encrypt(plain, key, AESAlgorithm.MODE_ECB, AESAlgorithm.PADDING_PKCS5);
 
-            System.out.println("  Key size : " + key.length + " bytes (" + (key.length * 8) + " bit)");
-            System.out.println("  Ban ro   : " + plain);
-            System.out.println("  Ban ma   : " + cipher);
-            System.out.println("  Giai ma  : " + decrypted);
-            System.out.println("  Ket qua  : " + (plain.equals(decrypted) ? "PASS" : "FAIL"));
-        } catch (Exception e) {
-            System.out.println("  LOI: " + e.getMessage());
-        }
-    }
+            // CBC: mã hóa 2 lần cùng plain → bản mã KHÁC NHAU (do IV random)
+            String cbc1 = AESAlgorithm.encrypt(plain, key, AESAlgorithm.MODE_CBC, AESAlgorithm.PADDING_PKCS5);
+            String cbc2 = AESAlgorithm.encrypt(plain, key, AESAlgorithm.MODE_CBC, AESAlgorithm.PADDING_PKCS5);
 
-    // Test import key từ Base64 (giả lập user dán key vào)
-    private static void testImportKey() {
-        System.out.println("\n[DES] Test import key tu Base64:");
-        try {
-            // Sinh key gốc
-            byte[] originalKey = DESAlgorithm.generateKey();
-            String keyB64      = DESAlgorithm.exportKeyToBase64(originalKey);
-
-            // Giả lập import lại từ chuỗi Base64
-            byte[] importedKey  = DESAlgorithm.importKeyFromBase64(keyB64);
-            String plain        = "Test import key";
-
-            String cipher       = DESAlgorithm.encrypt(plain, originalKey);
-            // Giải mã bằng key đã import — phải ra đúng bản gốc
-            String decrypted    = DESAlgorithm.decrypt(cipher, importedKey);
-
-            System.out.println("  Key B64 goc   : " + keyB64);
-            System.out.println("  Key da import : " + DESAlgorithm.exportKeyToBase64(importedKey));
-            System.out.println("  Giai ma dung  : " + (plain.equals(decrypted) ? "PASS" : "FAIL"));
+            System.out.println("  ECB lan 1: " + ecb1);
+            System.out.println("  ECB lan 2: " + ecb2);
+            System.out.println("  ECB giong nhau (khong an toan): " + (ecb1.equals(ecb2) ? "YES (BAD)" : "NO"));
+            System.out.println();
+            System.out.println("  CBC lan 1: " + cbc1);
+            System.out.println("  CBC lan 2: " + cbc2);
+            System.out.println("  CBC khac nhau (an toan): " + (!cbc1.equals(cbc2) ? "YES (GOOD)" : "NO"));
         } catch (Exception e) {
             System.out.println("  LOI: " + e.getMessage());
         }
