@@ -1,12 +1,9 @@
 package com.cryptotool.algorithms.symmetric;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.util.Arrays;
 import java.util.Base64;
 
@@ -43,13 +40,7 @@ public class BlowfishAlgorithm {
     private static final String TRANSFORMATION = "Blowfish/CBC/PKCS5Padding";
     private static final int    IV_SIZE        = 8; // Blowfish block size = 64 bit = 8 byte
 
-    // Đăng ký BouncyCastle provider khi class được load lần đầu.
-    // Nếu chưa có thì thêm vào, nếu đã có rồi thì bỏ qua (tránh duplicate).
-    static {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
-            Security.addProvider(new BouncyCastleProvider());
-        }
-    }
+    // Dùng SunJCE provider tich hop san cua Java — khong can thu vien ngoai.
 
     // -------------------------------------------------------------------------
     // SINH KHÓA
@@ -118,7 +109,7 @@ public class BlowfishAlgorithm {
         IvParameterSpec iv = new IvParameterSpec(ivBytes);
 
         // Chỉ định rõ provider "BC" = BouncyCastle
-        Cipher cipher = Cipher.getInstance(TRANSFORMATION, "BC");
+        Cipher cipher = Cipher.getInstance(TRANSFORMATION);
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, iv);
 
         byte[] cipherBytes = cipher.doFinal(plainText.getBytes("UTF-8"));
@@ -152,7 +143,7 @@ public class BlowfishAlgorithm {
         SecretKeySpec secretKey = new SecretKeySpec(keyBytes, ALGORITHM);
         IvParameterSpec iv      = new IvParameterSpec(ivBytes);
 
-        Cipher cipher = Cipher.getInstance(TRANSFORMATION, "BC");
+        Cipher cipher = Cipher.getInstance(TRANSFORMATION);
         cipher.init(Cipher.DECRYPT_MODE, secretKey, iv);
 
         byte[] plainBytes = cipher.doFinal(cipherBytes);

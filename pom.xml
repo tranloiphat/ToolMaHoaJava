@@ -23,12 +23,7 @@
     </properties>
 
     <dependencies>
-        <!-- BouncyCastle: thư viện mật mã mở rộng, dùng cho Blowfish và các thuật toán nâng cao -->
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-            <version>1.70</version>
-        </dependency>
+        <!-- Khong co dependency ngoai — tat ca dung JCA/JCE built-in cua Java -->
     </dependencies>
 
     <build>

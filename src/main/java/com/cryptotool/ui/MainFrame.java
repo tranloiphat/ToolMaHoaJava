@@ -29,20 +29,10 @@ public class MainFrame extends JFrame {
         // Tab 2: Mã hóa đối xứng
         tabbedPane.addTab("  Ma Hoa Doi Xung  ", new SymmetricPanel());
 
-        // Tab 3: placeholder — sẽ được thay bằng panel thật ở giai đoạn 12
-        tabbedPane.addTab("  Ma Hoa Bat Doi Xung  ", buildPlaceholder("AsymmetricPanel - Giai doan 12"));
+        // Tab 3: Mã hóa bất đối xứng (RSA)
+        tabbedPane.addTab("  Ma Hoa Bat Doi Xung  ", new AsymmetricPanel());
 
         add(tabbedPane, BorderLayout.CENTER);
-    }
-
-    // Panel tạm thời cho tab chưa làm
-    private JPanel buildPlaceholder(String text) {
-        JPanel panel = new JPanel(new BorderLayout());
-        JLabel label = new JLabel(text, SwingConstants.CENTER);
-        label.setFont(new Font("Tahoma", Font.ITALIC, 16));
-        label.setForeground(Color.GRAY);
-        panel.add(label, BorderLayout.CENTER);
-        return panel;
     }
 
     private void setupMenuBar() {
